@@ -23,7 +23,11 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.android.support:recyclerview-v7:23.4.0'
     compile 'com.jakewharton:butterknife:7.0.1'
+    compile 'com.github.zomato:androidphotofilters:1.0.1'
+    compile 'com.github.ksoichiro:android-observablescrollview:1.5.2'
+
 //    compile 'com.alexvasilkov:gesture-views:2.1.1'
 //    compile 'com.jameskelso:pinch-to-zoom-imageview:1.0.0'
 

@@ -1,0 +1,61 @@
+<RelativeLayout android:id="@+id/r"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/thumb_background_color"
+    tools:context=".MainActivity">
+
+
+    <ImageView
+        android:id="@+id/place_holder_imageview"
+        android:layout_alignParentTop="true"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:background="@color/thumb_background_color">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/thumbnails"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/recycler_size"
+            android:layout_marginBottom="@dimen/thumbnail_vertical_padding"
+            android:layout_marginTop="@dimen/thumbnail_vertical_padding"
+            android:clipToPadding="false"/>
+
+
+        <LinearLayout
+            android:id="@+id/btn_save"
+            android:layout_below="@+id/thumbnails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@color/colorAccent"
+            android:gravity="center"
+            android:padding="12dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginRight="10dp"
+                android:src="@drawable/save" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SAVE"
+                android:textColor="@android:color/white" />
+
+
+        </LinearLayout>
+
+
+    </RelativeLayout>
+
+</RelativeLayout>

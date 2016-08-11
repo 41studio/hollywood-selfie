@@ -13,7 +13,6 @@ import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Point;
 import android.graphics.PointF;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
@@ -21,23 +20,21 @@ import android.hardware.Camera.PictureCallback;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
-import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
+import com.fourtyonestudio.hollywoodselfie.utils.images.CameraPreview;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -82,8 +79,6 @@ public class MainActivity extends Activity implements View.OnTouchListener {
     SeekBar contrastBar;
     @Bind(R.id.btn_switch)
     ImageView btnSwitch;
-    @Bind(R.id.btn_save)
-    Button btnSave;
 
 
     private Camera mCamera;
@@ -105,6 +100,7 @@ public class MainActivity extends Activity implements View.OnTouchListener {
     private float newRot = 0f;
     private float[] lastEvent = null;
     Bitmap bitmap = null;
+    Bitmap bitmapResult = null;
 
     private boolean isOpen = false;
     private boolean afterCapture = false;
@@ -183,23 +179,26 @@ public class MainActivity extends Activity implements View.OnTouchListener {
 
         SeekBar satBar = (SeekBar) findViewById(R.id.saturation_bar);
         satBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            //int progress = 0;
-
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progresValue, boolean fromUser) {
-                //progress = progresValue;
-                //Toast.makeText(getApplicationContext(), "Changing seekbar's progress", Toast.LENGTH_SHORT).show();
+            public void onStopTrackingTouch(SeekBar arg0) {
+                // TODO Auto-generated method stub
+
             }
 
             @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                //Toast.makeText(getApplicationContext(), "Started tracking seekbar", Toast.LENGTH_SHORT).show();
+            public void onStartTrackingTouch(SeekBar arg0) {
+                // TODO Auto-generated method stub
+
             }
 
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                //Toast.makeText(getApplicationContext(), "Stopped tracking seekbar", Toast.LENGTH_SHORT).show();
-                loadBitmapSat();
+            public void onProgressChanged(SeekBar arg0, int progress, boolean arg2) {
+
+                // TODO Auto-generated method stub
+                int saturation;
+                saturation = progress;
+                bitmapResult = updateSat(bitmap, saturation);
+                imgArtis.setImageBitmap(bitmapResult);
             }
         });
 
@@ -225,11 +224,36 @@ public class MainActivity extends Activity implements View.OnTouchListener {
                 // TODO Auto-generated method stub
                 int brightness;
                 brightness = progress;
-                Bitmap resultBitmap = doBrightness(bitmap, brightness);
-                imgArtis.setImageBitmap(resultBitmap);
+                bitmapResult = doBrightness(bitmap, brightness);
+                imgArtis.setImageBitmap(bitmapResult);
             }
         });
 
+        SeekBar seekbarcontrast = (SeekBar) findViewById(R.id.contrast_bar);
+        seekbarcontrast.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            @Override
+            public void onStopTrackingTouch(SeekBar arg0) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar arg0) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar arg0, int progress, boolean arg2) {
+
+                // TODO Auto-generated method stub
+                int contrast;
+                contrast = progress;
+                bitmapResult = adjustedContrast(bitmap, contrast);
+                imgArtis.setImageBitmap(bitmapResult);
+            }
+        });
 
     }
 
@@ -295,7 +319,9 @@ public class MainActivity extends Activity implements View.OnTouchListener {
         }
     }
 
-    Bitmap bitmapCamera;
+    private Bitmap bitmapCamera;
+    private Camera.Size cameraSize;
+    private byte[] datas;
 
 
     private PictureCallback getPictureCallback() {
@@ -303,218 +329,133 @@ public class MainActivity extends Activity implements View.OnTouchListener {
 
             @Override
             public void onPictureTaken(byte[] data, Camera camera) {
-                //make a new picture file
-                File pictureFile = getOutputMediaFile();
 
-                if (pictureFile == null) {
-                    return;
-                }
-                try {
-                    //write the file
-                    FileOutputStream fos = new FileOutputStream(pictureFile);
-                    fos.write(data);
-                    fos.close();
-                    Toast toast = Toast.makeText(myContext, "Picture saved: " + pictureFile.getName(), Toast.LENGTH_LONG);
-                    toast.show();
+                bitmapCamera = BitmapFactory.decodeByteArray(data, 0, data.length);
 
-
-                    showLayoutAfterCapture();
-
-
-                    bitmapCamera = BitmapFactory.decodeFile(pictureFile.getAbsolutePath());
-
-                    if (!cameraFront) {
-                        imgPreview.setImageBitmap(RotateBitmap(bitmapCamera, 90));
-                    } else {
-                        imgPreview.setImageBitmap(RotateBitmap(bitmapCamera, 270));
-                    }
-
-                    imgPreview.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
-                    imgPreview.setScaleType(ImageView.ScaleType.FIT_XY);
-
-//                    Display display = getWindowManager().getDefaultDisplay();
-//                    Point size = new Point();
-//                    display.getSize(size);
-//                    int width = size.x;
-//                    int height = size.y;
-//
-//                    previewImageView.getLayoutParams().height = height;
-//                    previewImageView.getLayoutParams().width = width;
-
-
-//                    Bitmap bitmapCamera = BitmapFactory.decodeFile(pictureFile.getAbsolutePath());
-//                    save(overlayBitmapToCenter(bitmapCamera, bitmap));
-
-                } catch (FileNotFoundException e) {
-                } catch (IOException e) {
+                if (!cameraFront) {
+                    bitmapCamera = RotateBitmap(bitmapCamera, 90);
+                    imgPreview.setImageBitmap(bitmapCamera);
+                } else {
+                    bitmapCamera = RotateBitmap(bitmapCamera, 270);
+                    imgPreview.setImageBitmap(bitmapCamera);
                 }
 
-                //refresh camera to continue preview
+                cameraSize = camera.getParameters().getPictureSize();
+                datas = data;
+
+                imgPreview.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
+                //imgPreview.setScaleType(ImageView.ScaleType.FIT_XY);
+
+
+                showLayoutAfterCapture();
+
                 mPreview.refreshCamera(mCamera);
 
-
-//                Code for set bitmap on one canvas
-//                BitmapFactory.Options options = new BitmapFactory.Options();
-//                //o.inJustDecodeBounds = true;
-//                Bitmap cameraBitmapNull = BitmapFactory.decodeByteArray(data, 0,
-//                        data.length, options);
-//
-//                int wid = options.outWidth;
-//                int hgt = options.outHeight;
-//                Matrix nm = new Matrix();
-//
-//                Camera.Size cameraSize = camera.getParameters().getPictureSize();
-//                float ratio = relativeLayout.getHeight()*1f/cameraSize.height;
-//                if (getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE) {
-//                    nm.postRotate(90);
-//                    nm.postTranslate(hgt, 0);
-//                    wid = options.outHeight;
-//                    hgt = options.outWidth;
-//                    ratio = relativeLayout.getWidth()*1f/cameraSize.height;
-//
-//                }else {
-//                    wid = options.outWidth;
-//                    hgt = options.outHeight;
-//                    ratio = relativeLayout.getHeight()*1f/cameraSize.height;
-//                }
-//
-//                float[] f = new float[9];
-//                matrix.getValues(f);
-//
-//                f[0] = f[0]/ratio;
-//                f[4] = f[4]/ratio;
-//                f[5] = f[5]/ratio;
-//                f[2] = f[2]/ratio;
-//                matrix.setValues(f);
-//
-//                Bitmap newBitmap = Bitmap.createBitmap(wid, hgt,
-//                        Bitmap.Config.ARGB_8888);
-//
-//                Canvas canvas = new Canvas(newBitmap);
-//                Bitmap cameraBitmap = BitmapFactory.decodeByteArray(data, 0,
-//                        data.length, options);
-//
-//                canvas.drawBitmap(cameraBitmap, nm, null);
-//                //cameraBitmap.recycle();
-//
-//                canvas.drawBitmap(bitmap, matrix, null);
-//                //bitmap.recycle();
-//
-//
-//                File storagePath = new File(
-//                        Environment.getExternalStorageDirectory() + "/HollywoodSelfie/");
-//                storagePath.mkdirs();
-//
-//                File myImage = new File(storagePath, Long.toString(System
-//                        .currentTimeMillis()) + ".jpg");
-//
-//                try {
-//                    FileOutputStream out = new FileOutputStream(myImage);
-//                    newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
-//
-//
-//                    out.flush();
-//                    out.close();
-//                } catch (FileNotFoundException e) {
-//                    Log.d("In Saving File", e + "");
-//                } catch (IOException e) {
-//                    Log.d("In Saving File", e + "");
-//                }
-//
-//                mPreview.refreshCamera(mCamera);
             }
         };
         return picture;
     }
 
-    @OnClick(R.id.btn_save)
-    void saveImage() {
+    @OnClick(R.id.btn_edit)
+    void editImage() {
 
-        Bitmap newBitmap = overlay(bitmapCamera, bitmap);
-
-        File storagePath = new File(
-                Environment.getExternalStorageDirectory() + "/HollywoodSelfie/");
-        storagePath.mkdirs();
-
-        File myImage = new File(storagePath, Long.toString(System
-                .currentTimeMillis()) + ".jpg");
-
-        try {
-            FileOutputStream out = new FileOutputStream(myImage);
-            newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
-
-
-            out.flush();
-            out.close();
-        } catch (FileNotFoundException e) {
-            Log.d("In Saving File", e + "");
-        } catch (IOException e) {
-            Log.d("In Saving File", e + "");
+        if (bitmapResult == null) {
+            bitmapResult = bitmap;
         }
 
 
+        // Code for set bitmap on one canvas
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        //o.inJustDecodeBounds = true;
+        Bitmap cameraBitmapNull = BitmapFactory.decodeByteArray(datas, 0,
+                datas.length, options);
 
-//        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-//        bitmapCamera.compress(Bitmap.CompressFormat.PNG, 100, stream);
-//        byte[] dat = stream.toByteArray();
-//
-//        // Code for set bitmap on one canvas
-//        BitmapFactory.Options options = new BitmapFactory.Options();
-//        //o.inJustDecodeBounds = true;
-//        Bitmap cameraBitmapNull = BitmapFactory.decodeByteArray(dat, 0,
-//                dat.length, options);
-//
-//        Display display = getWindowManager().getDefaultDisplay();
-//        Point size = new Point();
-//        display.getSize(size);
-//        int width = size.x;
-//        int height = size.y;
-//
-//        int wid = options.outWidth;
-//        int hgt = options.outHeight;
-//        Matrix nm = new Matrix();
-//
-//        //Camera.Size cameraSize = cam.getParameters().getPictureSize();
-//        float ratio = main.getHeight() * 1f / height;
-//        if (getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE) {
-//            nm.postRotate(90);
-//            nm.postTranslate(hgt, 0);
-//            wid = options.outHeight;
-//            hgt = options.outWidth;
-//            ratio = main.getWidth() * 1f / height;
-//
-//        } else {
-//            wid = options.outWidth;
-//            hgt = options.outHeight;
-//            ratio = main.getHeight() * 1f / height;
-//        }
-//
-//        float[] f = new float[9];
-//        matrix.getValues(f);
-//
-//        f[0] = f[0] / ratio;
-//        f[4] = f[4] / ratio;
-//        f[5] = f[5] / ratio;
-//        f[2] = f[2] / ratio;
-//        matrix.setValues(f);
-//
-//        Bitmap newBitmap = Bitmap.createBitmap(wid, hgt,
-//                Bitmap.Config.ARGB_8888);
-//
-//        Canvas canvas = new Canvas(newBitmap);
-//
-//
-//
-//        Bitmap cameraBitmap = BitmapFactory.decodeByteArray(dat, 0,
-//                dat.length, options);
-//
-//        canvas.drawBitmap(cameraBitmap, nm, null);
-//        //cameraBitmap.recycle();
-//
-//        canvas.drawBitmap(bitmap, matrix, null);
-//        //bitmap.recycle();
-//
-//
+        int wid = options.outWidth;
+        int hgt = options.outHeight;
+        Matrix nm = new Matrix();
+
+
+        float ratio = main.getHeight() * 1f / cameraSize.height;
+        if (getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE) {
+            nm.postRotate(90);
+            nm.postTranslate(hgt, 0);
+            wid = options.outHeight;
+            hgt = options.outWidth;
+            ratio = main.getWidth() * 1f / cameraSize.height;
+
+        } else {
+            wid = options.outWidth;
+            hgt = options.outHeight;
+            ratio = main.getHeight() * 1f / cameraSize.height;
+        }
+
+        float[] f = new float[9];
+        matrix.getValues(f);
+
+        f[0] = f[0] / ratio;
+        f[4] = f[4] / ratio;
+        f[5] = f[5] / ratio;
+        f[2] = f[2] / ratio;
+        matrix.setValues(f);
+
+        Bitmap newBitmap = Bitmap.createBitmap(wid, hgt,
+                Bitmap.Config.ARGB_8888);
+
+        Canvas canvas = new Canvas(newBitmap);
+        Bitmap cameraBitmap = BitmapFactory.decodeByteArray(datas, 0,
+                datas.length, options);
+
+        canvas.drawBitmap(cameraBitmap, nm, null);
+        //cameraBitmap.recycle();
+
+        canvas.drawBitmap(bitmapResult, matrix, null);
+        //bitmapResult.recycle();
+
+
+        //Go To Filter
+        if (newBitmap != null) {
+            Log.d("bitmapResult", "!null");
+            Toast.makeText(getApplicationContext(), "!null", Toast.LENGTH_LONG);
+
+//            Intent intent = new Intent();
+//            intent.setClass(getApplicationContext(), FilterActivity.class);
+//            intent.putExtra("Bitmap", newBitmap);
+//            startActivity(intent);
+//            finish();
+
+            File storagePath = new File(
+                    Environment.getExternalStorageDirectory() + "/HollywoodSelfie/");
+            storagePath.mkdirs();
+
+            File myImage = new File(storagePath, Long.toString(System
+                    .currentTimeMillis()) + ".jpg");
+
+            try {
+                //Write file
+                String filename = myImage.getName();
+                FileOutputStream stream = this.openFileOutput(filename, Context.MODE_PRIVATE);
+                newBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+
+                //Cleanup
+                stream.close();
+                newBitmap.recycle();
+
+                //Pop intent
+                Intent in1 = new Intent(this, FilterActivity.class);
+                in1.putExtra("Bitmap", filename);
+                startActivity(in1);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            Log.d("bitmapResult", "null");
+            Toast.makeText(getApplicationContext(), "null", Toast.LENGTH_LONG);
+        }
+
+        mPreview.refreshCamera(mCamera);
+
+
 //        File storagePath = new File(
 //                Environment.getExternalStorageDirectory() + "/HollywoodSelfie/");
 //        storagePath.mkdirs();
@@ -534,27 +475,19 @@ public class MainActivity extends Activity implements View.OnTouchListener {
 //        } catch (IOException e) {
 //            Log.d("In Saving File", e + "");
 //        }
+//
+//        Toast toast = Toast.makeText(myContext, "Picture saved: " + myImage.getAbsolutePath(), Toast.LENGTH_LONG);
+//        toast.show();
+//
+//        mPreview.refreshCamera(mCamera);
+//
+//        showLayoutBeforeCapture();
+
 
     }
 
     @OnClick(R.id.btn_capture)
     void captureClick() {
-        //
-//
-//            all.setDrawingCacheEnabled(true);
-//            bm = all.getDrawingCache();
-//
-//            if (bm != null) {
-//                Log.d("bitmap", "not null");
-//                PinchToZoomImageView imageView = (PinchToZoomImageView) findViewById(R.id.testView);
-//                imageView.setImageBitmap(bm);
-//            } else {
-//                Log.d("bitmap", "null");
-//            }
-//            save(bm);
-//
-
-
         mCamera.takePicture(null, null, mPicture);
     }
 
@@ -827,17 +760,6 @@ public class MainActivity extends Activity implements View.OnTouchListener {
         }
     }
 
-    private void loadBitmapSat() {
-        if (bitmap != null) {
-
-            int progressSat = saturationBar.getProgress();
-
-            //Saturation, 0=gray-scale. 1=identity
-            float sat = (float) progressSat / 256;
-            //satText.setText("Saturation: " + String.valueOf(sat));
-            imgArtis.setImageBitmap(updateSat(bitmap, sat));
-        }
-    }
 
     private Bitmap updateSat(Bitmap src, float settingSat) {
 
@@ -905,6 +827,67 @@ public class MainActivity extends Activity implements View.OnTouchListener {
         }
 
         // return final image
+        return bmOut;
+    }
+
+    private Bitmap adjustedContrast(Bitmap src, double value) {
+        // image size
+        int width = src.getWidth();
+        int height = src.getHeight();
+        // create output bitmap
+
+        // create a mutable empty bitmap
+        Bitmap bmOut = Bitmap.createBitmap(width, height, src.getConfig());
+
+        // create a canvas so that we can draw the bmOut Bitmap from source bitmap
+        Canvas c = new Canvas();
+        c.setBitmap(bmOut);
+
+        // draw bitmap to bmOut from src bitmap so we can modify it
+        c.drawBitmap(src, 0, 0, new Paint(Color.BLACK));
+
+
+        // color information
+        int A, R, G, B;
+        int pixel;
+        // get contrast value
+        double contrast = Math.pow((100 + value) / 100, 2);
+
+        // scan through all pixels
+        for (int x = 0; x < width; ++x) {
+            for (int y = 0; y < height; ++y) {
+                // get pixel color
+                pixel = src.getPixel(x, y);
+                A = Color.alpha(pixel);
+                // apply filter contrast for every channel R, G, B
+                R = Color.red(pixel);
+                R = (int) (((((R / 255.0) - 0.5) * contrast) + 0.5) * 255.0);
+                if (R < 0) {
+                    R = 0;
+                } else if (R > 255) {
+                    R = 255;
+                }
+
+                G = Color.green(pixel);
+                G = (int) (((((G / 255.0) - 0.5) * contrast) + 0.5) * 255.0);
+                if (G < 0) {
+                    G = 0;
+                } else if (G > 255) {
+                    G = 255;
+                }
+
+                B = Color.blue(pixel);
+                B = (int) (((((B / 255.0) - 0.5) * contrast) + 0.5) * 255.0);
+                if (B < 0) {
+                    B = 0;
+                } else if (B > 255) {
+                    B = 255;
+                }
+
+                // set new pixel color to output bitmap
+                bmOut.setPixel(x, y, Color.argb(A, R, G, B));
+            }
+        }
         return bmOut;
     }
 

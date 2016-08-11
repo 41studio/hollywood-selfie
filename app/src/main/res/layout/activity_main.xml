@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
+    android:background="@color/thumb_background_color"
     android:layout_height="fill_parent">
 
     <RelativeLayout
@@ -99,10 +100,10 @@
 
     <RelativeLayout
         android:id="@+id/layout_preview"
-        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentBottom="true">
+        android:layout_alignParentBottom="true"
+        android:visibility="gone">
 
 
         <LinearLayout
@@ -111,6 +112,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:background="@android:color/black"
+
             android:orientation="vertical"
             android:padding="10dp">
 
@@ -170,9 +172,9 @@
             </LinearLayout>
 
             <LinearLayout
-                android:layout_marginBottom="5dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
                 android:orientation="horizontal">
 
                 <TextView
@@ -193,12 +195,30 @@
 
             </LinearLayout>
 
-            <Button
-                android:id="@+id/btn_save"
-                android:layout_gravity="center"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/btn_edit"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Save"/>
+                android:background="@color/colorAccent"
+                android:gravity="center"
+                android:padding="12dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginRight="10dp"
+                    android:src="@drawable/edit" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Edit"
+                    android:textColor="@android:color/white" />
+
+
+            </LinearLayout>
+
+
         </LinearLayout>
     </RelativeLayout>
 
