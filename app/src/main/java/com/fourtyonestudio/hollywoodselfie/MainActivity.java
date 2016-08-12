@@ -99,6 +99,10 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
     private boolean isArtistContainerOpen = false;
     private boolean afterCapture = false;
 
+    private int saturation = 0;
+    private int contrast = 0;
+    private int brightness = 0;
+
     //Initialization on layout filter
     static {
         System.loadLibrary("NativeImageProcessor");
@@ -133,13 +137,19 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
         imgArtist = (ImageView) findViewById(R.id.img_artis);
         imgArtist.setOnTouchListener(this);
 
+        //Set default artist photo
+        setPhoto1();
+
         //Set OnSeekBarChangeListener on saturation bar, brightness bar, and contrast bar
+
+
         SeekBar saturationBar = (SeekBar) findViewById(R.id.saturation_bar);
         saturationBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStopTrackingTouch(SeekBar arg0) {
                 // TODO Auto-generated method stub
-
+                overlayBitmap = setSaturation(artistBitmap, saturation);
+                imgArtist.setImageBitmap(overlayBitmap);
             }
 
             @Override
@@ -152,10 +162,9 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
             public void onProgressChanged(SeekBar arg0, int progress, boolean arg2) {
 
                 // TODO Auto-generated method stub
-                int saturation;
+
                 saturation = progress;
-                overlayBitmap = setSaturation(artistBitmap, saturation);
-                imgArtist.setImageBitmap(overlayBitmap);
+
             }
         });
 
@@ -166,7 +175,8 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
             @Override
             public void onStopTrackingTouch(SeekBar arg0) {
                 // TODO Auto-generated method stub
-
+                overlayBitmap = setBrightness(artistBitmap, brightness);
+                imgArtist.setImageBitmap(overlayBitmap);
             }
 
             @Override
@@ -179,10 +189,9 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
             public void onProgressChanged(SeekBar arg0, int progress, boolean arg2) {
 
                 // TODO Auto-generated method stub
-                int brightness;
+
                 brightness = progress;
-                overlayBitmap = setBrightness(artistBitmap, brightness);
-                imgArtist.setImageBitmap(overlayBitmap);
+
             }
         });
 
@@ -192,7 +201,8 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
             @Override
             public void onStopTrackingTouch(SeekBar arg0) {
                 // TODO Auto-generated method stub
-
+                overlayBitmap = setContrast(artistBitmap, contrast);
+                imgArtist.setImageBitmap(overlayBitmap);
             }
 
             @Override
@@ -205,14 +215,14 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
             public void onProgressChanged(SeekBar arg0, int progress, boolean arg2) {
 
                 // TODO Auto-generated method stub
-                int contrast;
+
                 contrast = progress;
-                overlayBitmap = setContrast(artistBitmap, contrast);
-                imgArtist.setImageBitmap(overlayBitmap);
+
             }
         });
 
     }
+
 
     ////////////////////////// Layout capture
 
@@ -257,8 +267,14 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
 
     @OnClick(R.id.photo2)
     void setPhoto2() {
-        artistBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ariana);
+        artistBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.floyd02);
         imgArtist.setImageBitmap(artistBitmap);
+    }
+
+    @OnClick(R.id.btn_close)
+    void close() {
+        isArtistContainerOpen = false;
+        layoutPhoto.setVisibility(View.GONE);
     }
 
     public void onResume() {
@@ -476,11 +492,17 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
 
                 cameraBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 
+                //Handling camera result orientation
                 if (!cameraFront) {
                     cameraBitmap = rotateBitmap(cameraBitmap, 90);
                     imgPreview.setImageBitmap(cameraBitmap);
                 } else {
-                    cameraBitmap = rotateBitmap(cameraBitmap, 270);
+                    Bitmap bm = rotateBitmap(cameraBitmap, 270);
+                    Matrix matrix = new Matrix();
+                    //matrix.setRotate(270);
+                    matrix.preScale(-1.0f, 1.0f);
+                    cameraBitmap = Bitmap.createBitmap(bm, 0, 0, bm.getWidth(), bm.getHeight(), matrix, true);
+
                     imgPreview.setImageBitmap(cameraBitmap);
                 }
 
@@ -497,7 +519,6 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
         };
         return picture;
     }
-
 
     @OnClick(R.id.btn_edit)
     void editImage() {
@@ -539,18 +560,27 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
         f[2] = f[2] / ratio;
         matrix.setValues(f);
 
+
         filterBitmap = Bitmap.createBitmap(wid, hgt,
                 Bitmap.Config.ARGB_8888);
 
+
         Canvas canvas = new Canvas(filterBitmap);
-        Bitmap cameraBitmap = BitmapFactory.decodeByteArray(bitmapBytes, 0,
+        cameraBitmap = BitmapFactory.decodeByteArray(bitmapBytes, 0,
                 bitmapBytes.length, options);
+
+        //Handling bitmap on front camera
+        if (cameraFront) {
+            cameraBitmap = rotateBitmapFront(cameraBitmap, 180);
+
+        }
 
         canvas.drawBitmap(cameraBitmap, nm, null);
         //cameraBitmap.recycle();
 
         canvas.drawBitmap(overlayBitmap, matrix, null);
         //overlayBitmap.recycle();
+
 
         //Go To Filter
         if (filterBitmap != null) {
@@ -571,6 +601,16 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
         matrix.postRotate(angle);
         return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
+
+    //Handling rotate for bitmap from front camera
+    public static Bitmap rotateBitmapFront(Bitmap source, float angle) {
+        Matrix matrix = new Matrix();
+        matrix.setRotate(angle);
+        matrix.preScale(1.0f, -1.0f);
+
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
 
     //Handle show layout capture
     private void showLayoutCapture() {
@@ -758,6 +798,9 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
     }
 
     ////////////////////////// Layout Filter
+
+    boolean isFiltered = false;
+
     private void initUIWidgets() {
         thumbListView = (RecyclerView) findViewById(R.id.thumbnails);
         placeHolderImageView = (ImageView) findViewById(R.id.place_holder_imageview);
@@ -766,12 +809,16 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
     }
 
     private void initHorizontalList() {
+
+
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
         layoutManager.scrollToPosition(0);
         thumbListView.setLayoutManager(layoutManager);
         thumbListView.setHasFixedSize(true);
         bindDataToAdapter();
+
+        isFiltered = false;
     }
 
     private void bindDataToAdapter() {
@@ -823,12 +870,17 @@ public class MainActivity extends Activity implements ThumbnailCallback, View.On
 
     @Override
     public void onThumbnailClick(Filter filter) {
+        isFiltered = true;
         finalBitmap = filter.processFilter(Bitmap.createScaledBitmap(filterBitmap, 640, 640, false));
         placeHolderImageView.setImageBitmap(finalBitmap);
     }
 
     @OnClick(R.id.btn_save)
     void saveClick() {
+
+        if (!isFiltered) {
+            finalBitmap = filterBitmap;
+        }
 
         File storagePath = new File(
                 Environment.getExternalStorageDirectory() + "/HollywoodSelfie/");
